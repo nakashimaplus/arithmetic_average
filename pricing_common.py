@@ -99,7 +99,7 @@ def sigma_sabr_normal(t_0, T, strike, forward_rate, alpha, beta, rho, nu):
             return alpha*forward_rate*(1+(-alpha**2/24+rho*nu*alpha/4+(2-3*rho**2)/24*nu**2)*(T-t_0))
 
 
-def sigma_normal_negative2(t_0, T, K, R, alpha, beta, rho, nu):
+def sigma_sabr_normal_for_negative_rate(t_0, T, K, R, alpha, beta, rho, nu):
     theta = (2-3*rho**2)/24*nu**2+alpha**2/24*(2*np.abs(R)**beta *
                                                beta*(beta-1)*np.abs(R)**(beta-2)-(beta*np.abs(R)**(beta-1))**2)
     if R != K:  # and beta!=0:

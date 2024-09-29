@@ -10,7 +10,6 @@ from pricing_common import (
 
 from arithmetic_average_common import (
     g_function,
-    k_n_hat
 )
 
 
@@ -32,12 +31,12 @@ def main():
 
     def generate_payoff_function(t_0, t_s, t_e):
         def payoff_function(forward_rate, strike):
-            a = g_function(t_s=t_s, t_e=t_e, d_n=t_0, x=forward_rate)
             return max(g_function(t_s=t_s, t_e=t_e, d_n=t_0, x=forward_rate)-strike, 0)
         return payoff_function
 
     payoff_mc = payoff_by_sabr_mc_without_discout(
-        t_0, beta, r_0, tau_0, tau_1, strikes, generate_payoff_function(t_0, tau_0, tau_1), rho, nu, alpha, q, num_mc_path, num_grid)
+        t_0, beta, r_0, tau_0, tau_1, strikes,
+        generate_payoff_function(t_0, tau_0, tau_1), rho, nu, alpha, q, num_mc_path, num_grid)
 
     ##################################################################
     # for backward-looking parameters

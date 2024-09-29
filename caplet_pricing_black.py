@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 #     sigma_hagan,
 from pricing_common import (
     payoff_by_sabr_mc_without_discout,
-    sigma_black,
+    black_formula,
     sigma_sabr_black,
 )
 
@@ -52,7 +52,7 @@ def main():
 
     sigma_solution = list()
     for i in range(0, len(strikes)):
-        def func(sigma): return sigma_black(
+        def func(sigma): return black_formula(
             t_0, tau_1, strikes[i], r_0, sigma)-payoff_mc[i]
         sigma_initial_guess = 0.1
         sigma_solution.append(fsolve(func, sigma_initial_guess))

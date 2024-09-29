@@ -2,6 +2,13 @@ import math
 import numpy as np
 from scipy.stats import norm
 
+from arithmetic_average_common import (
+    g_function,
+    g_prime_function,
+    g_double_prime_function,
+    k_n_hat,
+)
+
 
 # derivative value at time t_0  without discout by Backward-looking SABR model with montecarlo simulation
 def payoff_by_sabr_mc_without_discout(t_0, beta, r_0, tau_0, tau_1, strikes, payoff_function, rho, nu, alpha, q,
@@ -34,7 +41,7 @@ def payoff_by_sabr_mc_without_discout(t_0, beta, r_0, tau_0, tau_1, strikes, pay
     return np.mean(payoff, axis=1)
 
 
-def sigma_black(t_0, T, K, forward_rate, sigma):
+def black_formula(t_0, T, K, forward_rate, sigma):
     x = math.log(forward_rate/K)
 
     def d_plus(x, T, sigma):
@@ -45,7 +52,7 @@ def sigma_black(t_0, T, K, forward_rate, sigma):
     return forward_rate*norm.cdf(d_plus(x, T-t_0, sigma))-K*norm.cdf(d_minus(x, T-t_0, sigma))
 
 
-def sigma_normal(t_0, T, K, R, sigma):
+def normal_formula(t_0, T, K, R, sigma):
     def d_normal(t_0, T, K, R, sigma):
         return (R-K)/(sigma*math.sqrt(T-t_0))
     return (R-K)*norm.cdf(d_normal(t_0, T, K, R, sigma))+sigma*math.sqrt(T-t_0)*norm.pdf(d_normal(t_0, T, K, R, sigma))
@@ -90,25 +97,6 @@ def sigma_sabr_normal(t_0, T, strike, forward_rate, alpha, beta, rho, nu):
             return nu*(forward_rate-strike)/xi*(1+(-alpha**2/24+rho*nu*alpha/4+(2-3*rho**2)/24*nu**2)*(T-t_0))
         else:
             return alpha*forward_rate*(1+(-alpha**2/24+rho*nu*alpha/4+(2-3*rho**2)/24*nu**2)*(T-t_0))
-
-    # if forward_rate != K and beta != 0:
-    #     if K > 0 and forward_rate > 0:
-    #         I = (forward_rate**(1-beta)-K**(1-beta))/(1-beta)
-    #     elif K < 0 and forward_rate < 0:
-    #         I = ((-forward_rate)**(1-beta)-(-K)**(1-beta))/(1-beta)
-    #     elif K < 0 and forward_rate > 0:
-    #         I = (forward_rate**(1-beta)-(-K)**(1-beta))/(1-beta)
-    #     zeta = nu/alpha*I
-    #     xi = math.log((math.sqrt(1-2*rho*zeta+zeta**2)+zeta-rho)/(1-rho))
-    #     return alpha*(forward_rate-K)/I*zeta/xi*(1+(beta*(beta-2)*alpha**2/(24*R_mid**(2-2*beta))+rho*beta*nu*alpha/(4*R_mid**(1-beta))+(2-3*rho**2)/24*rho**2)*(T-t_0))
-    # elif forward_rate == K and beta != 0:
-    #     return alpha*forward_rate**beta*(1+(beta*(beta-2)*alpha**2/(24*forward_rate**(2-2*beta))+rho*beta*nu*alpha/(4*forward_rate**(1-beta))+(2-3*rho**2)/24*rho**2)*(T-t_0))
-    # if forward_rate != K:
-    #     zeta = nu/alpha*(forward_rate-K)
-    #     xi = math.log((math.sqrt(1-2*rho*zeta+zeta**2)+zeta-rho)/(1-rho))
-    #     return nu*(forward_rate-K)/xi*(1+(2-3*rho**2)/24*nu**2*(T-t_0))
-    # if forward_rate == K:
-    #     return alpha*(1+(2-3*rho**2)/24*nu**2*(T-t_0))
 
 
 def sigma_normal_negative2(t_0, T, K, R, alpha, beta, rho, nu):
@@ -156,3 +144,23 @@ def v_qc(t_0, T,  strike, forward_rate, alpha, beta, rho, nu):
         f_adj = forward_rate
     return ((forward_rate-strike)**2+_s_q**2*(T-t_0))*norm.cdf((f_adj-strike)/(sigma_q_k*math.sqrt(T-t_0))
                                                                )+(f_adj-strike)*sigma_q_k*math.sqrt(T-t_0)*norm.pdf((f_adj-strike)/(sigma_q_k*math.sqrt(T-t_0)))
+
+
+def v_aa_caplet(t_0, t_s, t_e, d_n,   strike, forward_rate, alpha, beta, rho, nu):
+    strike_hat = k_n_hat(t_s, t_e, d_n, strike)
+    g_r = g_function(t_s, t_e, d_n, forward_rate)
+    g_k = g_function(t_s, t_e, d_n, strike_hat)
+    g_r_prime = g_prime_function(t_s, t_e, d_n, forward_rate)
+    g_r_double_prime = g_double_prime_function(t_s, t_e, d_n, forward_rate)
+
+    first_term = 0
+    if forward_rate > strike_hat:
+        first_term = (g_r-g_k - g_r_prime*(forward_rate-strike_hat) +
+                      1/2 * g_r_double_prime*(forward_rate-strike_hat)**2)
+
+    second_term = (g_r_prime-g_r_double_prime*(forward_rate-strike_hat))*normal_formula(t_0, t_e, strike_hat,
+                                                                                        forward_rate, sigma_sabr_normal(t_0, t_e, strike_hat, forward_rate, alpha, beta, rho, nu))
+    third_term = 1/2*g_r_double_prime * \
+        v_qc(t_0, t_e,  strike_hat, forward_rate, alpha, beta, rho, nu)
+
+    return second_term + third_term

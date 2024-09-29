@@ -18,4 +18,4 @@ def g_double_prime_function(t_s, t_e, d_n, x):
 
 
 def k_n_hat(t_s, t_e, d_n, k_n):
-    return math.exp()
+    return (math.exp((t_e-t_s)*k_n)-1)/(t_e-d_n)

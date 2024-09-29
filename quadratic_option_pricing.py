@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 from pricing_common import (
     payoff_by_sabr_mc_without_discout,
-    sigma_normal,
+    normal_formula,
     v_qc,
 )
 
@@ -51,12 +51,12 @@ def main():
     sigma_mc_solution = list()
     sigma_approximation_solution = list()
     for i in range(0, len(strikes)):
-        def func(sigma): return sigma_normal(
+        def func(sigma): return normal_formula(
             t_0, tau_1, strikes[i], r_0, sigma)-payoff_mc[i]
         sigma_initial_guess = 0.1
         sigma_mc_solution.append(fsolve(func, sigma_initial_guess))
 
-        def func(sigma): return sigma_normal(
+        def func(sigma): return normal_formula(
             t_0, tau_1, strikes[i], r_0, sigma)-payoff_approximation[i]
         sigma_initial_guess = 0.1
         sigma_approximation_solution.append(fsolve(func, sigma_initial_guess))

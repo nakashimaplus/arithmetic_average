@@ -1,14 +1,16 @@
 import math
 from scipy.optimize import fsolve
 import matplotlib.pyplot as plt
-# from arithmetic_average.pricing_common import (
-#     payoff_by_sabr_mc_without_discout,
-#     sigma_black,
-#     sigma_hagan,
+
 from pricing_common import (
     payoff_by_sabr_mc_without_discout,
     normal_formula,
-    sigma_sabr_normal,
+    v_aa_caplet,
+)
+
+from arithmetic_average_common import (
+    g_function,
+    k_n_hat
 )
 
 
@@ -16,7 +18,7 @@ def main():
     t_0 = 0
     beta = 1
     r_0 = 0.05
-    strikes = [0.044, 0.046, 0.048, 0.050, 0.052, 0.054, 0.056, 0.058]
+    strikes = [0.080, 0.085, 0.09, 0.095, 0.10, 0.105, 0.11, 0.115, 0.12]
     tau_0 = 0.5
     tau_1 = 1
     rho = -0.5
@@ -28,11 +30,14 @@ def main():
 
     tau = 2*q*tau_0+tau_1
 
-    def payoff_function(forward_rate, strike):
-        return max(forward_rate-strike, 0)
+    def generate_payoff_function(t_0, t_s, t_e):
+        def payoff_function(forward_rate, strike):
+            a = g_function(t_s=t_s, t_e=t_e, d_n=t_0, x=forward_rate)
+            return max(g_function(t_s=t_s, t_e=t_e, d_n=t_0, x=forward_rate)-strike, 0)
+        return payoff_function
 
     payoff_mc = payoff_by_sabr_mc_without_discout(
-        t_0, beta, r_0, tau_0, tau_1, strikes, payoff_function, rho, nu, alpha, q, num_mc_path, num_grid)
+        t_0, beta, r_0, tau_0, tau_1, strikes, generate_payoff_function(t_0, tau_0, tau_1), rho, nu, alpha, q, num_mc_path, num_grid)
 
     ##################################################################
     # for backward-looking parameters
@@ -45,25 +50,37 @@ def main():
     alpha_hat = math.sqrt((alpha**2/(2*q+1))*tau/tau_1*math.exp(1/2*H*tau_1))
     ##################################################################
 
-    sigma = list()
-    for i in strikes:
-        sigma.append(sigma_sabr_normal(
-            t_0, tau_1, i, r_0, alpha_hat, beta, rho_hat, nu_hat))
+    payoff_approximation = list()
+    for strike in strikes:
+        payoff_approximation.append(v_aa_caplet(
+            t_0, tau_0, tau_1, t_0, strike, r_0, alpha_hat, beta, rho_hat, nu_hat))
 
-    sigma_solution = list()
+    sigma_mc_solution = list()
+    sigma_approximation_solution = list()
     for i in range(0, len(strikes)):
         def func(sigma): return normal_formula(
             t_0, tau_1, strikes[i], r_0, sigma)-payoff_mc[i]
         sigma_initial_guess = 0.1
-        sigma_solution.append(fsolve(func, sigma_initial_guess))
+        sigma_mc_solution.append(fsolve(func, sigma_initial_guess))
+
+        def func(sigma): return normal_formula(
+            t_0, tau_1, strikes[i], r_0, sigma)-payoff_approximation[i]
+        sigma_initial_guess = 0.1
+        sigma_approximation_solution.append(fsolve(func, sigma_initial_guess))
 
     import winsound
     frequency = 500
     duration = 1000
     winsound.Beep(frequency, duration)
+    import numpy as np
+    sigma_diff = [np.abs(mx-approx) for (mx, approx)
+                  in zip(sigma_mc_solution, sigma_approximation_solution)]
 
-    plt.plot(strikes, sigma_solution, label='MC')
-    plt.plot(strikes, sigma, label='all effective')
+    plt.plot(strikes, sigma_mc_solution, label='MC')
+    plt.plot(strikes, sigma_approximation_solution,
+             label='Approximation')
+    plt.plot(strikes, sigma_diff,
+             label='Diff')
     plt.xlabel("K")
     plt.grid()
     plt.legend()

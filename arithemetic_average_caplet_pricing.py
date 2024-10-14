@@ -25,7 +25,7 @@ def main():
     alpha = 0.1
     q = 1
     num_grid = 512
-    num_mc_path = 10**4
+    num_mc_path = 10**6
 
     tau = 2*q*tau_0+tau_1
 
@@ -75,11 +75,13 @@ def main():
     sigma_diff = [np.abs(mx-approx) for (mx, approx)
                   in zip(sigma_mc_solution, sigma_approximation_solution)]
 
+    print(f"sigma_approximation_solution : {sigma_approximation_solution}")
+    print(f"sigma_mc_solution : {sigma_mc_solution}")
+    print(f"sigma_diff : {sigma_diff}")
+
     plt.plot(strikes, sigma_mc_solution, label='MC')
     plt.plot(strikes, sigma_approximation_solution,
              label='Approximation')
-    plt.plot(strikes, sigma_diff,
-             label='Diff')
     plt.xlabel("K")
     plt.grid()
     plt.legend()

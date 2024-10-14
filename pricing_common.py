@@ -153,14 +153,14 @@ def v_aa_caplet(t_0, t_s, t_e, d_n,   strike, forward_rate, alpha, beta, rho, nu
     g_r_prime = g_prime_function(t_s, t_e, d_n, forward_rate)
     g_r_double_prime = g_double_prime_function(t_s, t_e, d_n, forward_rate)
 
-    # first_term = 0
-    # if forward_rate > strike_hat:
-    #     first_term = (g_r-g_k - g_r_prime*(forward_rate-strike_hat) +
-    #                   1/2 * g_r_double_prime*(forward_rate-strike_hat)**2)
+    first_term = 0
+    if forward_rate > strike_hat:
+        first_term = (g_r-g_k - g_r_prime*(forward_rate-strike_hat) +
+                      1/2 * g_r_double_prime*(forward_rate-strike_hat)**2)
 
     second_term = (g_r_prime-g_r_double_prime*(forward_rate-strike_hat))*normal_formula(t_0, t_e, strike_hat,
                                                                                         forward_rate, sigma_sabr_normal(t_0, t_e, strike_hat, forward_rate, alpha, beta, rho, nu))
     third_term = 1/2*g_r_double_prime * \
         v_qc(t_0, t_e,  strike_hat, forward_rate, alpha, beta, rho, nu)
 
-    return second_term + third_term
+    return first_term + second_term + third_term

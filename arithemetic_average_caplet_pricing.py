@@ -82,7 +82,7 @@ def main():
     plt.plot(strikes, sigma_mc_solution, label='MC')
     plt.plot(strikes, sigma_approximation_solution,
              label='Approximation')
-    plt.xlabel("K")
+    plt.xlabel("Strike")
     plt.grid()
     plt.legend()
     plt.show()
